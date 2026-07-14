@@ -71,3 +71,19 @@ temp/
 # Campaign execution artifacts
 outreach_stats.json
 send_report.json
+
+# CSV/spreadsheet exports — contain contact emails and PII
+*.csv
+*.xlsx
+*.xls
+
+# Gmail OAuth tokens (all accounts)
+gmail_token*.json
+gmail_credentials*.json
+
+# Campaign ID files
+CAMPAIGN_ID.txt
+FV_CAMPAIGN_ID.txt
+
+# Scheduled task locks
+.claude/scheduled_tasks.lock
