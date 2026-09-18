@@ -145,7 +145,7 @@ We're selecting 2–3 companies for the Fall 2026 and are reaching out to a hand
 
 Would you be open to a 10-minute call to explore whether there's a fit? Happy to share past work samples beforehand.
 
-Here is my calendly link: https://calendly.com/d/d2fr-zwb-wxs?month=2026-06&date=2026-06-17
+Here is my Google Calendar appointment link: https://calendar.app.google/nzGcHZ7uKG6NpKiY6
 
 Best,
 Eleyn Xiong | 858-371-9042
@@ -158,7 +158,7 @@ FILL INSTRUCTIONS:
 - [specialization_phrase]: 1-2 sentences describing what BBS specializes in FOR THIS COMPANY/INDUSTRY. E.g., for healthcare: "helping large healthcare systems operationalize care delivery models at scale"
 - [2-3 sentences]: personalization referencing the hook: "{research.get('hook', '')}" or pain point
 - [deliverables]: pick from this list what's most relevant to {company_name}'s industry: {deliverables_by_industry}
-- NO CHANGES to signature, calendly link, or structure
+- NO CHANGES to signature, Google Calendar link, or structure
 - Ensure body flows naturally with actual names and details filled in
 """
 
@@ -175,7 +175,7 @@ We've advised and helped scale the very startups that have gone on to raise from
 
 Would you be open to a 10-minute call to explore whether there's a fit? Happy to share past work and examples of what our teams have delivered.
 
-Here is my Calendly link: https://calendly.com/d/d2fr-zwb-wxs?month=2026-06&date=2026-06-17
+Here is my Google Calendar appointment link: https://calendar.app.google/nzGcHZ7uKG6NpKiY6
 
 Best,
 Eleyn Xiong | 858-371-9042
@@ -186,7 +186,7 @@ FILL INSTRUCTIONS:
 - [Company]: replace both occurrences with the actual company name: {company_name}
 - [personalized insight]: 1 sentence about what {company_name} has been doing recently (scaling, expanding, pivoting, etc.) — use the hook: "{research.get('hook', '')}"
 - [relevant domain]: {company_name}'s core market or domain in 2–4 words (e.g. "enterprise AI infrastructure", "B2B fintech", "defense tech")
-- NO CHANGES to signature, Calendly link, or the Free Ventures bio paragraph
+- NO CHANGES to signature, Google Calendar link, or the Free Ventures bio paragraph
 - Ensure the body flows naturally with actual details filled in
 """
 
@@ -205,7 +205,7 @@ We're selecting 2–3 partners for Fall 2026, and given [Company]'s trajectory, 
 
 Would you be open to a quick 10-minute call? Happy to share examples of past work.
 
-Here is my Calendly link: https://calendly.com/d/d2fr-zwb-wxs?month=2026-06&date=2026-06-17
+Here is my Google Calendar appointment link: https://calendar.app.google/nzGcHZ7uKG6NpKiY6
 
 Best,
 Eleyn Xiong | 858-371-9042
@@ -215,11 +215,39 @@ FILL INSTRUCTIONS:
 - [Company]: replace all three occurrences with the actual company name: {company_name}
 - [specific, researched insight]: 1 sentence about what {company_name} has been doing recently — use the hook: "{research.get('hook', '')}"
 - [relevant domain]: {company_name}'s core market in 2–4 words (e.g. "enterprise AI infrastructure", "B2B fintech", "defense tech")
-- NO CHANGES to the org intro paragraph, signature, or Calendly link
+- NO CHANGES to the org intro paragraph, signature, or Google Calendar link
 - Ensure the body flows naturally with actual details filled in
 """
 
-        if template == "fv":
+        _fv_mentorship_step1 = f"""You are writing a step-1 cold outreach email from Aadith at Free Ventures.
+
+The ENTIRE email body is fixed — your ONLY job is to write one (1) sentence for the personalization line.
+
+EMAIL TEMPLATE:
+Hi {{first_name}},
+
+[PERSONALIZATION — 1 sentence only about {first_name} {last_name} at {company_name}: their specific portfolio companies, known investments, sector focus, or founder background. Be concrete. Use hook: "{research.get('hook', '')}"]
+
+I lead Free Ventures at UC Berkeley — Berkeley's leading pre-seed startup accelerator and the only nonprofit, student-run program of its kind. This Fall (Oct 6 – Nov 10), we're recruiting mentors for our upcoming batch and would love to have someone with your background involved.
+
+Our founders are building in AI, climate tech, fintech, biotech, and more — the most promising ideas coming out of Berkeley at the earliest stage. As a mentor, you'd typically commit 1–2 hours over the course of the program: a single session with any follow-up you find worthwhile. Many past mentors have found it a great way to see Berkeley's top founding talent early.
+
+Would you be open to a quick 20-minute intro call?
+
+Best,
+Aadith
+https://www.freeventures.org/
+
+FILL INSTRUCTIONS:
+- Replace [PERSONALIZATION — 1 sentence only...] with exactly ONE sentence about {first_name} {last_name}'s work or background. Reference specific portfolio companies, known investments, or their focus area at {company_name}.
+- Do NOT change anything else in the body — not a single word outside that one sentence.
+- Subject MUST be exactly: "UC Berkeley Free Ventures | Batch Mentorship Partnership"
+- Return ONLY valid JSON: {{"subject": "UC Berkeley Free Ventures | Batch Mentorship Partnership", "body": "..."}}
+"""
+
+        if template == "fv_mentorship":
+            _step1 = _fv_mentorship_step1
+        elif template == "fv":
             _step1 = _fv_step1
         elif template == "vo":
             _step1 = _vo_step1
@@ -232,7 +260,7 @@ FILL INSTRUCTIONS:
             3: "FOLLOW-UP #2 / break-up.",
         }
 
-        if template == "fv":
+        if template in ("fv", "fv_mentorship"):
             org_label = "Free Ventures"
         elif template == "vo":
             org_label = "Venture Out"
@@ -257,7 +285,7 @@ STEP {step_number} INSTRUCTIONS:
 IMPORTANT RULES:
 1. Return ONLY valid JSON: {{"subject": "...", "body": "..."}}
 2. The body for step 1 MUST use the exact template structure above with all blanks filled in
-3. Sign all emails exactly as shown in the template: for Venture Out use "Eleyn Xiong | 858-371-9042\nVenture Out | UC Berkeley"; for others use "Eleyn Xiong | 858-371-9042\n{org_label}\nUC Berkeley"
+3. Sign all emails exactly as shown in the template: for fv_mentorship use "Aadith\nhttps://www.freeventures.org/"; for Venture Out use "Eleyn Xiong | 858-371-9042\nVenture Out | UC Berkeley"; for others use "Eleyn Xiong | 858-371-9042\n{org_label}\nUC Berkeley"
 4. Subject line: under 6 words, specific to {company_name}, professional but personable
 """
         try:
