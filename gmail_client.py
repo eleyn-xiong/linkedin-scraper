@@ -90,8 +90,14 @@ class GmailClient:
         sender_email: str = None,
         thread_id: Optional[str] = None,
         in_reply_to: Optional[str] = None,
+        send_at=None,
     ) -> dict:
-        """Send an email. Returns {id, threadId}."""
+        """Send an email. Returns {id, threadId}.
+
+        send_at: optional UTC datetime. When provided, Gmail schedules the
+        message for delivery at that time instead of sending immediately.
+        The message appears under the Scheduled label in Gmail until sent.
+        """
         sender_name = sender_name or config.SENDER_NAME
         sender_email = sender_email or config.SENDER_EMAIL
 
@@ -109,6 +115,9 @@ class GmailClient:
         payload = {"raw": raw}
         if thread_id:
             payload["threadId"] = thread_id
+        if send_at is not None:
+            # Gmail API scheduled send: RFC 3339 UTC timestamp
+            payload["scheduledAt"] = send_at.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         result = self.service.users().messages().send(userId="me", body=payload).execute()
         return {"id": result["id"], "threadId": result["threadId"]}

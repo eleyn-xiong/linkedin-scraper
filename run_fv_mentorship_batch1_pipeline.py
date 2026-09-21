@@ -10,7 +10,7 @@ Template: fv_mentorship — only the 1-line hook is LLM-generated.
 
 import sys, time, random, sqlite3
 from datetime import datetime, timezone
-from schedule_utils import check_send_window
+from schedule_utils import next_business_send_time, _PACIFIC
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -246,9 +246,10 @@ def main():
 
     print(f"  {len(rows)} emails queued — sending from {SENDER_EMAIL}...")
 
-    if not check_send_window(campaign_id=campaign_id):
-        conn_s.close()
-        return
+    send_at = next_business_send_time()
+    if send_at:
+        _pt = send_at.astimezone(_PACIFIC).strftime("%A, %b %d at 8:00 AM PT")
+        print(f"\n  [SCHEDULING] Outside business hours — scheduling {len(rows)} email(s) via Gmail for {_pt}.\n")
 
     gmail = None
     for attempt in range(3):
@@ -275,6 +276,7 @@ def main():
                     body=row["body"],
                     sender_name=SENDER_NAME,
                     sender_email=SENDER_EMAIL,
+                    send_at=send_at,
                 )
 
                 def _upd(sql, params=()):
@@ -289,12 +291,14 @@ def main():
                             else:
                                 raise
 
+                _ts = send_at.isoformat() if send_at else datetime.now(timezone.utc).isoformat()
                 _upd(
-                    "UPDATE send_records SET status='sent',gmail_message_id=?,gmail_thread_id=?,sent_at=? WHERE id=?",
-                    (result["id"], result["threadId"], datetime.now(timezone.utc).isoformat(), row["sr_id"]),
+                    "UPDATE send_records SET status='sent',gmail_message_id=?,gmail_thread_id=?,sent_at=?,scheduled_at=? WHERE id=?",
+                    (result["id"], result["threadId"], _ts, send_at.isoformat() if send_at else None, row["sr_id"]),
                 )
                 total_sent += 1
-                print(f"  [{total_sent}] {row['company_name']} — {row['first_name']} {row['last_name']} <{row['primary_email']}>")
+                tag = "SCHED" if send_at else total_sent
+                print(f"  [{tag}] {row['company_name']} — {row['first_name']} {row['last_name']} <{row['primary_email']}>")
                 break
 
             except ConnectionResetError:

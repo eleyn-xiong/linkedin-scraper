@@ -13,7 +13,7 @@ Sender account:
 """
 
 import sys, json, random, time, sqlite3, argparse
-from schedule_utils import check_send_window
+from schedule_utils import next_business_send_time, _PACIFIC
 from datetime import datetime, timedelta, timezone
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -195,8 +195,10 @@ def run_followups(dry_run: bool = False, campaign_filter: str = None):
             print(f"    Sent {str(row['sent_at'])[:10]} → follow-up from {sender_email}")
         return
 
-    if not check_send_window(campaign_id=None):
-        return
+    send_at = next_business_send_time()
+    if send_at:
+        _pt = send_at.astimezone(_PACIFIC).strftime("%A, %b %d at 8:00 AM PT")
+        print(f"\n  [SCHEDULING] Outside business hours — scheduling {len(eligible)} follow-up(s) via Gmail for {_pt}.\n")
 
     sent_count = 0
     error_count = 0
@@ -252,6 +254,7 @@ def run_followups(dry_run: bool = False, campaign_filter: str = None):
                         sender_email=sender_email,
                         thread_id=row["gmail_thread_id"] or None,
                         in_reply_to=row["gmail_message_id"] or None,
+                        send_at=send_at,
                     )
                     break
                 except ConnectionResetError:
@@ -262,7 +265,7 @@ def run_followups(dry_run: bool = False, campaign_filter: str = None):
                     else:
                         raise
 
-            sent_time = datetime.now(timezone.utc).isoformat()
+            sent_time = send_at.isoformat() if send_at else datetime.now(timezone.utc).isoformat()
 
             with get_db() as conn:
                 msg_id = new_id()
@@ -277,8 +280,8 @@ def run_followups(dry_run: bool = False, campaign_filter: str = None):
                     conn,
                     "INSERT INTO send_records "
                     "(id, campaign_id, contact_id, message_id, step_number, status, "
-                    "gmail_message_id, gmail_thread_id, sent_at) "
-                    "VALUES (?,?,?,?,2,'sent',?,?,?)",
+                    "gmail_message_id, gmail_thread_id, sent_at, scheduled_at) "
+                    "VALUES (?,?,?,?,2,'sent',?,?,?,?)",
                     (
                         new_id(),
                         row["campaign_id"],
@@ -287,6 +290,7 @@ def run_followups(dry_run: bool = False, campaign_filter: str = None):
                         result["id"],
                         result["threadId"],
                         sent_time,
+                        send_at.isoformat() if send_at else None,
                     ),
                 )
 

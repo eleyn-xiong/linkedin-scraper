@@ -1,6 +1,6 @@
 """BBS Batch 9 — 25 new Fortune 500 companies, 10 emails each, eleynxiong@berkeley.edu."""
 import sys, time, random, sqlite3
-from schedule_utils import check_send_window
+from schedule_utils import next_business_send_time, _PACIFIC
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -448,9 +448,10 @@ rows = conn_s.execute("""
 
 print(f"  {len(rows)} emails queued — sending from eleynxiong@berkeley.edu...")
 
-if not check_send_window(campaign_id=campaign_id):
-    conn_s.close()
-    sys.exit(0)
+send_at = next_business_send_time()
+if send_at:
+    _pt = send_at.astimezone(_PACIFIC).strftime("%A, %b %d at 8:00 AM PT")
+    print(f"\n  [SCHEDULING] Outside business hours — scheduling {len(rows)} email(s) via Gmail for {_pt}.\n")
 
 total_sent = 0; total_failed = 0
 
@@ -459,9 +460,11 @@ for row in rows:
     while retries < 3:
         try:
             result = gmail.send_email(to=row["primary_email"], subject=row["subject"],
-                body=row["body"], sender_name="Eleyn Xiong", sender_email="eleynxiong@berkeley.edu")
-            safe_exec("UPDATE send_records SET status='sent',gmail_message_id=?,gmail_thread_id=?,sent_at=? WHERE id=?",
-                (result["id"], result["threadId"], datetime.now().isoformat(), row["sr_id"]))
+                body=row["body"], sender_name="Eleyn Xiong", sender_email="eleynxiong@berkeley.edu",
+                send_at=send_at)
+            _ts = send_at.isoformat() if send_at else datetime.now().isoformat()
+            safe_exec("UPDATE send_records SET status='sent',gmail_message_id=?,gmail_thread_id=?,sent_at=?,scheduled_at=? WHERE id=?",
+                (result["id"], result["threadId"], _ts, send_at.isoformat() if send_at else None, row["sr_id"]))
             total_sent += 1
             print(f"  [{total_sent}] {row['company_name']} - {row['first_name']} {row['last_name']} <{row['primary_email']}>")
             break

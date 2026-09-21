@@ -4,7 +4,7 @@ Reads queued records from DB and sends in order. Safe to re-run.
 """
 import sys, sqlite3, time, random
 from datetime import datetime
-from schedule_utils import check_send_window
+from schedule_utils import next_business_send_time, _PACIFIC
 
 DB_PATH = "outreach.db"
 
@@ -49,8 +49,10 @@ conn.close()
 
 print(f"Total queued across all Gmail campaigns: {len(rows)}")
 
-if not check_send_window():
-    sys.exit(0)
+send_at = next_business_send_time()
+if send_at:
+    _pt = send_at.astimezone(_PACIFIC).strftime("%A, %b %d at 8:00 AM PT")
+    print(f"\n[SCHEDULING] Outside business hours — scheduling {len(rows)} email(s) via Gmail for {_pt}.\n")
 
 from gmail_client import GmailClient
 gmail = GmailClient(account="default")
@@ -74,11 +76,13 @@ for i, row in enumerate(rows, 1):
                 subject=row["subject"],
                 body=row["body"],
                 sender_name="Eleyn Xiong",
-                sender_email="eleynxiong@berkeley.edu"
+                sender_email="eleynxiong@berkeley.edu",
+                send_at=send_at,
             )
+            _ts = send_at.isoformat() if send_at else datetime.now().isoformat()
             safe_exec(
-                "UPDATE send_records SET status='sent', gmail_message_id=?, gmail_thread_id=?, sent_at=? WHERE id=?",
-                (result["id"], result["threadId"], datetime.now().isoformat(), row["sr_id"])
+                "UPDATE send_records SET status='sent', gmail_message_id=?, gmail_thread_id=?, sent_at=?, scheduled_at=? WHERE id=?",
+                (result["id"], result["threadId"], _ts, send_at.isoformat() if send_at else None, row["sr_id"])
             )
             total_sent += 1
             print(" OK")

@@ -19,7 +19,7 @@ Example CSV row:
 """
 
 import sys, csv, random, time, sqlite3, argparse
-from schedule_utils import check_send_window
+from schedule_utils import next_business_send_time, _PACIFIC
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -235,8 +235,10 @@ def main():
         print("\nDry run complete. No emails sent.")
         return
 
-    if not check_send_window(campaign_id=campaign_id):
-        return
+    send_at = next_business_send_time()
+    if send_at:
+        _pt = send_at.astimezone(_PACIFIC).strftime("%A, %b %d at 8:00 AM PT")
+        print(f"\n  [SCHEDULING] Outside business hours — scheduling {len(queued)} email(s) via Gmail for {_pt}.\n")
 
     gmail = None
     for attempt in range(3):
@@ -262,6 +264,7 @@ def main():
                     body=row["body"],
                     sender_name=SENDER_NAME,
                     sender_email=SENDER_EMAIL,
+                    send_at=send_at,
                 )
                 break
             except ConnectionResetError:
@@ -272,14 +275,14 @@ def main():
                 else:
                     raise
 
-        sent_time = datetime.now(timezone.utc).isoformat()
+        sent_time = send_at.isoformat() if send_at else datetime.now(timezone.utc).isoformat()
         with get_db() as conn:
             safe_exec(
                 conn,
                 """UPDATE send_records
-                   SET status='sent', sent_at=?, gmail_message_id=?, gmail_thread_id=?
+                   SET status='sent', sent_at=?, scheduled_at=?, gmail_message_id=?, gmail_thread_id=?
                    WHERE id=?""",
-                (sent_time, result["id"], result["threadId"], row["id"]),
+                (sent_time, send_at.isoformat() if send_at else None, result["id"], result["threadId"], row["id"]),
             )
 
         sent_count += 1
