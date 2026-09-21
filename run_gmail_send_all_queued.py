@@ -2,10 +2,9 @@
 Send all queued emails across all Gmail campaigns from eleynxiong@berkeley.edu.
 Reads queued records from DB and sends in order. Safe to re-run.
 """
-import sqlite3
-import time
-import random
+import sys, sqlite3, time, random
 from datetime import datetime
+from schedule_utils import check_send_window
 
 DB_PATH = "outreach.db"
 
@@ -49,6 +48,9 @@ rows = conn.execute("""
 conn.close()
 
 print(f"Total queued across all Gmail campaigns: {len(rows)}")
+
+if not check_send_window():
+    sys.exit(0)
 
 from gmail_client import GmailClient
 gmail = GmailClient(account="default")

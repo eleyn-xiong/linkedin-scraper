@@ -13,6 +13,7 @@ Sender account:
 """
 
 import sys, json, random, time, sqlite3, argparse
+from schedule_utils import check_send_window
 from datetime import datetime, timedelta, timezone
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -192,6 +193,9 @@ def run_followups(dry_run: bool = False, campaign_filter: str = None):
                 f"@ {row['company_name']}"
             )
             print(f"    Sent {str(row['sent_at'])[:10]} → follow-up from {sender_email}")
+        return
+
+    if not check_send_window(campaign_id=None):
         return
 
     sent_count = 0

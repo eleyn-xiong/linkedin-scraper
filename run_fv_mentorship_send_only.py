@@ -19,6 +19,7 @@ Example CSV row:
 """
 
 import sys, csv, random, time, sqlite3, argparse
+from schedule_utils import check_send_window
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -232,6 +233,9 @@ def main():
             print(f"  WOULD SEND → {row['first_name']} {row['last_name']} <{row['primary_email']}> @ {row['company_name']}")
             print(f"    Subject: {row['subject']}")
         print("\nDry run complete. No emails sent.")
+        return
+
+    if not check_send_window(campaign_id=campaign_id):
         return
 
     gmail = None

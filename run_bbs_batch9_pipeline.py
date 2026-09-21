@@ -1,5 +1,6 @@
 """BBS Batch 9 — 25 new Fortune 500 companies, 10 emails each, eleynxiong@berkeley.edu."""
 import sys, time, random, sqlite3
+from schedule_utils import check_send_window
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -446,6 +447,11 @@ rows = conn_s.execute("""
 """, (campaign_id,)).fetchall()
 
 print(f"  {len(rows)} emails queued — sending from eleynxiong@berkeley.edu...")
+
+if not check_send_window(campaign_id=campaign_id):
+    conn_s.close()
+    sys.exit(0)
+
 total_sent = 0; total_failed = 0
 
 for row in rows:

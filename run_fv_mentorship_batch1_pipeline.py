@@ -10,6 +10,7 @@ Template: fv_mentorship — only the 1-line hook is LLM-generated.
 
 import sys, time, random, sqlite3
 from datetime import datetime, timezone
+from schedule_utils import check_send_window
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -244,6 +245,10 @@ def main():
     ).fetchall()
 
     print(f"  {len(rows)} emails queued — sending from {SENDER_EMAIL}...")
+
+    if not check_send_window(campaign_id=campaign_id):
+        conn_s.close()
+        return
 
     gmail = None
     for attempt in range(3):
